@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-import pytesseract
 
 
 #Functions to add
@@ -45,7 +44,7 @@ def checkVertex(image):
     return num_vertices
 
 
-images = ["dangerSign.jpg", "stopSign.jpg", "WheelchairSign.png", "PruebaIcono.jpg", "group.png"]
+images = ["dangerSign.jpg", "stopSign.jpg", "WheelchairSign.png", "PruebaIcono.jpg", "group.png", "groupYSign.png"]
 n = len(images)
 for i in images:
     num_vertices = checkVertex(i)    
@@ -61,9 +60,9 @@ for i in images:
     elif exists["blue"] and num_vertices == 4:
         detected_sign = "Wheelchair sign"
     
-    if all(exists[c] for c in ["blue", "yellow", "red"]) and num_vertices == 4:
+    if all(exists[c] for c in ["blue", "yellow", "red"]) and num_vertices in [3, 4, 8]:
         detected_sign = "Multiple signs!"
-
+        
     for k, v in exists.items():
         print(f"  {k}: {v}")
     if detected_sign:
@@ -71,13 +70,18 @@ for i in images:
     else:
         print("Detected sign: Unknown\n")
         
-
-    plt.figure(figsize=(9,3))
+    plt.figure(figsize=(1,4))
+    plt.subplot(1,4,1)
+    plt.title("Original")
+    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    plt.axis("off")
+    
     for i, name in enumerate(("yellow","red","blue"), 1):
-        plt.subplot(1,3,i)
+        plt.subplot(1,4,i+1)
         plt.title(name)
         plt.imshow(masks[name], cmap="gray")
         plt.axis("off")
+ 
         
     plt.tight_layout()
     plt.show()
