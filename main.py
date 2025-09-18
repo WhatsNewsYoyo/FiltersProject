@@ -6,9 +6,31 @@ import pytesseract
 
 #Functions to add
 def checkColor(image):
-    i = 0;
-    
-    
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    yellow = cv2.inRange(hsv, np.array([20,50,50]), np.array([35,255,255]))
+    blue = cv2.inRange(hsv, np.array([100,150,50]), np.array([140,255,255]))
+    red1 = cv2.inRange(hsv, np.array([0,50,50]), np.array([10,255,255]))
+    red2 = cv2.inRange(hsv, np.array([160,50,50]), np.array([179,255,255]))
+    red = cv2.bitwise_or(red1, red2)
+    return {"yellow": yellow, "red": red, "blue": blue}
+
+def mask_has_color(mask, area_frac=0.005):
+    """
+    Comprueba si una máscara contiene suficiente cantidad de píxeles,
+    usando solo un umbral proporcional al tamaño de la imagen.
+    - area_frac: fracción del área total que debe cubrir el color (ej. 0.005 = 0.5%).
+    """
+    nz = cv2.countNonZero(mask)
+    total = mask.shape[0] * mask.shape[1]
+    threshold = max(1, int(area_frac * total))  # umbral proporcional, al menos 1 píxel
+    return nz >= threshold
+
+def masks_exist(masks, area_frac=0.005):
+    """
+    Aplica mask_has_color_proportional a cada máscara del dict y devuelve
+    un dict {nombre: True/False}.
+    """
+    return {name: mask_has_color(mask, area_frac) for name, mask in masks.items()}
     
 def checkVertex(image):
     img = cv2.imread(image)
@@ -20,23 +42,42 @@ def checkVertex(image):
     approx = cv2.approxPolyDP(contour, 0.04 * perimeter, True)       
     num_vertices = len(approx)
     print(f"Vertex numbers : {num_vertices}")
-
-    #Screenshots for presentation
-    """
-    plt.figure(figsize=(1,3))
-    plt.subplot(1,3,1)
-    plt.imshow(cv2.cvtColor(img_gray, cv2.COLOR_BGR2RGB))
-    plt.title("Gray scale")
-    plt.axis('off')
-
-    plt.show()
-    """
-
     return num_vertices
 
 
-
-images = ["dangerSign.jpg", "stopSign.jpg", "WheelchairSign.png"]
+images = ["dangerSign.jpg", "stopSign.jpg", "WheelchairSign.png", "PruebaIcono.jpg", "group.png"]
 n = len(images)
 for i in images:
-    checkVertex(i)
+    num_vertices = checkVertex(i)    
+    img = cv2.imread(i)
+    masks = checkColor(img)
+    exists = masks_exist(masks)
+    detected_sign = None
+        
+    if exists["red"] and num_vertices == 8:
+        detected_sign = "Stop sign"
+    elif exists["yellow"] and num_vertices == 3:
+        detected_sign = "Danger sign"
+    elif exists["blue"] and num_vertices == 4:
+        detected_sign = "Wheelchair sign"
+    
+    if all(exists[c] for c in ["blue", "yellow", "red"]) and num_vertices == 4:
+        detected_sign = "Multiple signs!"
+
+    for k, v in exists.items():
+        print(f"  {k}: {v}")
+    if detected_sign:
+        print(f"Detected sign: {detected_sign}\n")
+    else:
+        print("Detected sign: Unknown\n")
+        
+
+    plt.figure(figsize=(9,3))
+    for i, name in enumerate(("yellow","red","blue"), 1):
+        plt.subplot(1,3,i)
+        plt.title(name)
+        plt.imshow(masks[name], cmap="gray")
+        plt.axis("off")
+        
+    plt.tight_layout()
+    plt.show()
