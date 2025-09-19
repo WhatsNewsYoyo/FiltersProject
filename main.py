@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 
 #Functions to add
 def checkColor(image):
+    """
+    Calcula máscaras HSV para amarillo, rojo y azul a partir de una imagen BGR.
+    """
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     yellow = cv2.inRange(hsv, np.array([20,50,50]), np.array([35,255,255]))
     blue = cv2.inRange(hsv, np.array([100,150,50]), np.array([140,255,255]))
@@ -15,9 +18,7 @@ def checkColor(image):
 
 def mask_has_color(mask, area_frac=0.005):
     """
-    Comprueba si una máscara contiene suficiente cantidad de píxeles,
-    usando solo un umbral proporcional al tamaño de la imagen.
-    - area_frac: fracción del área total que debe cubrir el color (ej. 0.005 = 0.5%).
+    Comprueba si una máscara contiene suficiente cantidad de píxeles, usando solo un umbral proporcional al tamaño de la imagen.
     """
     nz = cv2.countNonZero(mask)
     total = mask.shape[0] * mask.shape[1]
@@ -26,8 +27,7 @@ def mask_has_color(mask, area_frac=0.005):
 
 def masks_exist(masks, area_frac=0.005):
     """
-    Aplica mask_has_color_proportional a cada máscara del dict y devuelve
-    un dict {nombre: True/False}.
+    Aplica mask_has_color_proportional a cada máscara del dict y devuelve un dict {nombre: True/False}.
     """
     return {name: mask_has_color(mask, area_frac) for name, mask in masks.items()}
     
