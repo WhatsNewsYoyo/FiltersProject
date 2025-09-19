@@ -31,11 +31,21 @@ def masks_exist(masks, area_frac=0.005):
     """
     return {name: mask_has_color(mask, area_frac) for name, mask in masks.items()}
     
+"""
+Esta función cuenta los vértices de la figura más grande presente en una imagen. 
+Para ello, primero convierte la imagen a escala de grises y aplica un umbral (threshold) que aísla el contorno de la figura. 
+Posteriormente identifica el contorno de mayor tamaño, calcula su perímetro y, con estos datos, determina de manera aproximada el número de vértices de la figura.
+"""    
 def checkVertex(image):
+    #Leer imagen cargada
     img = cv2.imread(image)
+    #Conversión a gray scale
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    #Compara los pixeles para volverlos blancos o negros dependiendo de su valor.
     _, thresh = cv2.threshold(img_gray, 240, 255, cv2.CHAIN_APPROX_NONE)
+    #Regresa todos los contornos en la imagen
     contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    #La figura con mayor contorno es la que tomaremos como la principal de la imagen para regresar sus vertices
     contour = max(contours, key=cv2.contourArea)
     perimeter = cv2.arcLength(contour, True)
     approx = cv2.approxPolyDP(contour, 0.04 * perimeter, True)       
@@ -44,15 +54,19 @@ def checkVertex(image):
     return num_vertices
 
 
+
+
 images = ["dangerSign.jpg", "stopSign.jpg", "WheelchairSign.png", "PruebaIcono.jpg", "group.png", "groupYSign.png"]
 n = len(images)
+#Ciclo principal para que analice cada imagen
 for i in images:
     num_vertices = checkVertex(i)    
     img = cv2.imread(i)
     masks = checkColor(img)
     exists = masks_exist(masks)
     detected_sign = None
-        
+    
+    #Comparativa entre colores y vertices para verificar que simbolo es.
     if exists["red"] and num_vertices == 8:
         detected_sign = "Stop sign"
     elif exists["yellow"] and num_vertices == 3:
